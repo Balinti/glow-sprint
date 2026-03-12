@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Glow Sprint - Free HTML5 Game</title>
+  <meta name="description" content="Play Glow Sprint - Tap to dodge and weave through multiplying neon-lit traffic in a futuristic city street.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0014">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Glow Sprint - Free HTML5 Game">
+  <meta property="og:description" content="Tap to dodge and weave through multiplying neon-lit traffic in a futuristic city street.">
+  <meta property="og:url" content="https://balinti.github.io/glow-sprint/">
+  <meta property="og:image" content="https://balinti.github.io/glow-sprint/og.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Glow Sprint - Free HTML5 Game">
+  <meta name="twitter:description" content="Tap to dodge and weave through multiplying neon-lit traffic in a futuristic city street.">
+  <meta name="twitter:image" content="https://balinti.github.io/glow-sprint/og.png">
+
+  <link rel="canonical" href="https://balinti.github.io/glow-sprint/">
+
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4099346100621490" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0014;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100dvh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #e0d0ff;
+      overflow-x: hidden;
+    }
+
+    #game-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 420 / 750;
+      max-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    /* HUD overlay */
+    #hud {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 12px 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    #score-display {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 0 12px #a060ff;
+      line-height: 1;
+    }
+    #right-hud {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    #mult-display {
+      font-size: 20px;
+      font-weight: 700;
+      color: #c090ff;
+      text-shadow: 0 0 8px #8040cc;
+      line-height: 1;
+    }
+    #best-display {
+      font-size: 12px;
+      color: #806090;
+      line-height: 1;
+    }
+    #mode-display {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #ff80ff;
+      text-shadow: 0 0 14px #ff40ff;
+      text-align: center;
+      height: 16px;
+      transition: opacity 0.2s;
+    }
+    #phase-bar-wrap {
+      width: 100%;
+      height: 5px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #phase-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #8040ff, #ff40ff);
+      transition: width 0.1s linear;
+      box-shadow: 0 0 6px #ff40ff;
+    }
+
+    /* Below-canvas SEO content */
+    #seo-content {
+      width: 100%;
+      max-width: 420px;
+      padding: 24px 20px 40px;
+      color: #806090;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    #seo-content h2 {
+      font-size: 15px;
+      color: #a080c0;
+      margin: 16px 0 6px;
+      font-weight: 700;
+    }
+    #seo-content p { margin-bottom: 8px; }
+    #seo-content ul { padding-left: 18px; margin-bottom: 8px; }
+    #seo-content details { margin-bottom: 8px; }
+    #seo-content summary { cursor: pointer; color: #a080c0; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div id="game-wrap">
+  <canvas id="gc"></canvas>
+  <div id="hud">
+    <div id="hud-top">
+      <div id="score-display">0</div>
+      <div id="right-hud">
+        <div id="mult-display">×1</div>
+        <div id="best-display">BEST 0</div>
+      </div>
+    </div>
+    <div id="mode-display"></div>
+    <div id="phase-bar-wrap"><div id="phase-bar"></div></div>
+  </div>
+</div>
+
+<div id="seo-content">
+  <p><strong>Glow Sprint</strong> is a free hyper-casual browser game. Race down a neon city expressway, dodging glowing traffic across three lanes. Build streaks, trigger Overdrive, and chase your high score — no download required.</p>
+
+  <h2>How to Play</h2>
+  <ul>
+    <li>Tap / click anywhere (or press <kbd>Space</kbd> / <kbd>Enter</kbd>) to shift lanes: Left → Mid → Right → Left.</li>
+    <li>Dodge oncoming traffic cars to score points. The longer you survive, the faster it gets.</li>
+    <li>Pass close to a car's side for a <strong>Near-Miss bonus (+3)</strong> and faster multiplier growth.</li>
+    <li>Fill the <strong>PHASE bar</strong> with clean dodges to trigger <strong>Overdrive</strong> — speed up, earn more, look cool.</li>
+    <li>Touch a car = game over. Tap again to restart instantly.</li>
+  </ul>
+
+  <h2>FAQ</h2>
+  <details><summary>Does Glow Sprint work on mobile?</summary>
+    <p>Yes — tap anywhere on screen to change lanes. The canvas scales to fit your phone without any app install.</p>
+  </details>
+  <details><summary>Is there a save system?</summary>
+    <p>Your all-time best score is saved locally in your browser via localStorage. It persists between sessions on the same device.</p>
+  </details>
+  <details><summary>What is Overdrive?</summary>
+    <p>Overdrive activates automatically when the PHASE bar is full. For a few seconds the world speeds up, colors shift, and your score multiplier climbs faster. Survive it for a massive point haul.</p>
+  </details>
+  <details><summary>Can I share my score?</summary>
+    <p>Yes — after a game over, tap the Share button to post your score. On supported devices it uses the native share sheet; otherwise it copies a challenge link to your clipboard.</p>
+  </details>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// ── Design constants ──────────────────────────────────────────────────────────
+const DW = 420, DH = 750;
+const ROAD_X = 60, ROAD_W = 300;
+const LANES = [110, 210, 310];
+const PLAYER_Y = 610;
+const PW = 44, PH = 64;
+const CW = 70, CH = 96;
+const NEAR_MISS_PX = 10;
+const LS_KEY = 'gsp_phaseLane_best';
+const OVERDRIVE_DUR = 5000; // ms
+const OVERDRIVE_FILL = 1;
+const PHASE_PER_DODGE = 0.09;
+const PHASE_PER_NEAR = 0.15;
+const STREAK_FOR_MULT = 5;
+const HIT_STOP_MS = 180;
+
+// ── Canvas & scaling ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+let dpr = 1, scaleX = 1, scaleY = 1;
+
+function resizeCanvas() {
+  const wrap = document.getElementById('game-wrap');
+  const rect = wrap.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  scaleX = (rect.width / DW) * dpr;
+  scaleY = (rect.height / DH) * dpr;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ── HUD DOM refs ──────────────────────────────────────────────────────────────
+const scoreEl = document.getElementById('score-display');
+const multEl  = document.getElementById('mult-display');
+const bestEl  = document.getElementById('best-display');
+const modeEl  = document.getElementById('mode-display');
+const phaseBar= document.getElementById('phase-bar');
+
+// ── Persistent best ───────────────────────────────────────────────────────────
+let best = parseInt(localStorage.getItem(LS_KEY) || '0', 10);
+bestEl.textContent = 'BEST ' + best;
+
+// ── URL params ────────────────────────────────────────────────────────────────
+const urlP = new URLSearchParams(location.search);
+const challengeScore = parseInt(urlP.get('challengeScore') || '0', 10);
+const challengeMult  = parseInt(urlP.get('challengeMult')  || '0', 10);
+
+// ── Shake controller ──────────────────────────────────────────────────────────
+let shakeAmt = 0, shakeDecay = 0.85;
+function addShake(amt) { shakeAmt = Math.max(shakeAmt, amt); }
+
+// ── Flash ─────────────────────────────────────────────────────────────────────
+let flashAlpha = 0;
+function addFlash(a) { flashAlpha = Math.max(flashAlpha, a); }
+
+// ── Hit stop ─────────────────────────────────────────────────────────────────
+let hitStopUntil = 0;
+
+// ── Color hue ─────────────────────────────────────────────────────────────────
+let hue = 270;
+
+// ── Game state ────────────────────────────────────────────────────────────────
+const STATE = { START: 0, PLAYING: 1, GAMEOVER: 2 };
+let state = STATE.START;
+
+let score = 0, multiplier = 1, multProgress = 0, streak = 0;
+let phase = 0, overdrive = false, overdriveEnd = 0;
+let bestMult = 1;
+
+// ── Player ────────────────────────────────────────────────────────────────────
+let playerLane = 1; // 0,1,2
+let playerX = LANES[1];
+let playerTargetX = LANES[1];
+let playerVX = 0;
+let laneColorHue = 270;
+
+// ── Cars ──────────────────────────────────────────────────────────────────────
+const MAX_CARS = 20;
+let cars = [];
+function makeCar(lane, y, hue) {
+  return { lane, x: LANES[lane], y, hue, passed: false, nearMissed: false };
+}
+
+// ── Particles ─────────────────────────────────────────────────────────────────
+const MAX_PARTICLES = 120;
+let particles = [];
+function spawnParticles(x, y, count, hue, speed, life, size) {
+  for (let i = 0; i < count; i++) {
+    if (particles.length >= MAX_PARTICLES) break;
+    const angle = Math.random() * Math.PI * 2;
+    const spd = speed * (0.4 + Math.random() * 0.6);
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd,
+      hue: hue + (Math.random() - 0.5) * 40,
+      life, maxLife: life,
+      size: size * (0.5 + Math.random() * 0.5)
+    });
+  }
+}
+
+// ── Speed & spawn ─────────────────────────────────────────────────────────────
+function getSpeed(t) {
+  // t in seconds; starts ~220, ramps to ~500
+  return Math.min(500, 220 + t * 18) * (overdrive ? 1.55 : 1);
+}
+function getSpawnInterval(t) {
+  // ms; starts 1400 → min 650
+  return Math.max(650, 1400 - t * 12) * (overdrive ? 0.6 : 1);
+}
+
+// ── Wave pattern library ──────────────────────────────────────────────────────
+// Each pattern is an array of {lane, offset} — offset is y above screen top (negative)
+// Never block all 3 lanes at once
+const PATTERNS = [
+  [ {lane:0,off:0} ],
+  [ {lane:1,off:0} ],
+  [ {lane:2,off:0} ],
+  [ {lane:0,off:0},{lane:2,off:0} ],
+  [ {lane:0,off:0},{lane:1,off:120} ],
+  [ {lane:1,off:0},{lane:2,off:120} ],
+  [ {lane:0,off:0},{lane:2,off:0},{lane:1,off:150} ],
+  [ {lane:0,off:0},{lane:1,off:0} ],
+  [ {lane:1,off:0},{lane:2,off:0} ],
+  [ {lane:0,off:100},{lane:2,off:0} ],
+  [ {lane:0,off:0},{lane:2,off:100} ],
+  [ {lane:1,off:0},{lane:0,off:180} ],
+  [ {lane:1,off:0},{lane:2,off:180} ],
+  // harder: 2 cars side by side (still 1 lane open)
+  [ {lane:0,off:0},{lane:1,off:0} ],
+  [ {lane:1,off:0},{lane:2,off:0} ],
+  [ {lane:0,off:0},{lane:2,off:60} ],
+];
+
+let nextSpawn = 0;
+let timePlayed = 0; // seconds
+
+// ── Dodge / gate tracking ─────────────────────────────────────────────────────
+let dodgesForStreak = 0;
+
+// ── Tap input ─────────────────────────────────────────────────────────────────
+function onInput() {
+  if (state === STATE.START) {
+    startGame();
+  } else if (state === STATE.PLAYING) {
+    shiftLane();
+  } else if (state === STATE.GAMEOVER) {
+    startGame();
+  }
+}
+
+canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); onInput(); });
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); onInput(); }
+});
+
+// ── Lane shift ────────────────────────────────────────────────────────────────
+function shiftLane() {
+  playerLane = (playerLane + 1) % 3;
+  playerTargetX = LANES[playerLane];
+  spawnParticles(playerX, PLAYER_Y + PH * 0.3, 6, laneColorHue, 80, 0.35, 4);
+}
+
+// ── Start / reset ─────────────────────────────────────────────────────────────
+function startGame() {
+  state = STATE.PLAYING;
+  score = 0; multiplier = 1; multProgress = 0; streak = 0;
+  phase = 0; overdrive = false; bestMult = 1;
+  playerLane = 1; playerX = LANES[1]; playerTargetX = LANES[1]; playerVX = 0;
+  cars = []; particles = [];
+  timePlayed = 0; nextSpawn = 0;
+  hitStopUntil = 0; shakeAmt = 0; flashAlpha = 0;
+  updateHUD();
+}
+
+// ── HUD update ────────────────────────────────────────────────────────────────
+function updateHUD() {
+  scoreEl.textContent = Math.floor(score);
+  multEl.textContent = '×' + multiplier;
+  bestEl.textContent = 'BEST ' + best;
+  modeEl.textContent = overdrive ? 'OVERDRIVE' : '';
+  modeEl.style.opacity = overdrive ? '1' : '0';
+  phaseBar.style.width = (Math.min(phase, 1) * 100) + '%';
+}
+
+// ── Collision (AABB, forgiving) ───────────────────────────────────────────────
+function checkCollision(car) {
+  const px = playerX - PW * 0.5 + 4;
+  const py = PLAYER_Y - PH * 0.5 + 4;
+  const pw = PW - 8; const ph = PH - 8;
+  const cx = car.x - CW * 0.5 + 6;
+  const cy = car.y - CH * 0.5 + 6;
+  const cw = CW - 12; const ch = CH - 12;
+  return px < cx + cw && px + pw > cx && py < cy + ch && py + ph > cy;
+}
+
+function checkNearMiss(car) {
+  if (car.nearMissed || car.passed) return false;
+  // car just passed player y
+  if (car.y > PLAYER_Y + PH * 0.5 + 2 && car.y < PLAYER_Y + PH * 0.5 + 40) {
+    const px1 = playerX - PW * 0.5;
+    const px2 = playerX + PW * 0.5;
+    const cx1 = car.x - CW * 0.5;
+    const cx2 = car.x + CW * 0.5;
+    const gap = (px1 > cx2) ? px1 - cx2 : (cx1 > px2) ? cx1 - px2 : -1;
+    if (gap > 0 && gap <= NEAR_MISS_PX) return true;
+  }
+  return false;
+}
+
+// ── Overdrive ─────────────────────────────────────────────────────────────────
+function triggerOverdrive() {
+  overdrive = true;
+  overdriveEnd = performance.now() + OVERDRIVE_DUR;
+  phase = 0;
+  addFlash(0.6);
+  addShake(6);
+  spawnParticles(DW * 0.5, DH * 0.5, 40, 300, 200, 0.8, 6);
+}
+
+// ── Game over ─────────────────────────────────────────────────────────────────
+function triggerGameOver() {
+  state = STATE.GAMEOVER;
+  addShake(18);
+  addFlash(0.9);
+  hitStopUntil = performance.now() + HIT_STOP_MS;
+  const s = Math.floor(score);
+  if (s > best) {
+    best = s;
+    localStorage.setItem(LS_KEY, best);
+  }
+  bestEl.textContent = 'BEST ' + best;
+  spawnParticles(playerX, PLAYER_Y, 30, 0, 180, 0.9, 7);
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────────
+let lastTime = 0;
+
+function loop(now) {
+  requestAnimationFrame(loop);
+
+  const rawDt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  // hit stop
+  if (now < hitStopUntil) {
+    renderFrame(0);
+    return;
+  }
+
+  const dt = rawDt;
+
+  if (state === STATE.PLAYING) {
+    update(dt, now);
+  }
+
+  renderFrame(dt);
+}
+
+function update(dt, now) {
+  timePlayed += dt;
+  hue = (hue + dt * 20) % 360;
+  laneColorHue = hue;
+
+  // Overdrive check
+  if (overdrive && now > overdriveEnd) {
+    overdrive = false;
+    modeEl.textContent = '';
+    modeEl.style.opacity = '0';
+  }
+
+  // Player slide
+  const dx = playerTargetX - playerX;
+  playerX += dx * Math.min(1, dt * 18);
+
+  // Spawn cars
+  nextSpawn -= dt * 1000;
+  if (nextSpawn <= 0) {
+    spawnWave();
+    nextSpawn = getSpawnInterval(timePlayed);
+  }
+
+  // Update cars
+  const spd = getSpeed(timePlayed);
+  let newCars = [];
+  for (let i = 0; i < cars.length; i++) {
+    const c = cars[i];
+    c.y += spd * dt;
+
+    // Near miss
+    if (!c.nearMissed && !c.passed && checkNearMiss(c)) {
+      c.nearMissed = true;
+      score += 3 * multiplier;
+      phase = Math.min(1, phase + PHASE_PER_NEAR);
+      addShake(4);
+      spawnParticles((playerX + c.x) * 0.5, PLAYER_Y, 10, hue + 60, 120, 0.5, 5);
+    }
+
+    // Passed (gate)
+    if (!c.passed && c.y > PLAYER_Y + PH * 0.5 + 50) {
+      c.passed = true;
+      if (!c.nearMissed) {
+        score += 1 * multiplier;
+        streak++;
+        dodgesForStreak++;
+        phase = Math.min(1, phase + PHASE_PER_DODGE);
+        if (dodgesForStreak >= STREAK_FOR_MULT * (overdrive ? 0.6 : 1)) {
+          multiplier = Math.min(multiplier + 1, 99);
+          dodgesForStreak = 0;
+          if (multiplier > bestMult) bestMult = multiplier;
+          spawnParticles(playerX, PLAYER_Y - 40, 12, hue, 100, 0.5, 4);
+        }
+      }
+    }
+
+    // Collision
+    if (!c.passed && checkCollision(c)) {
+      triggerGameOver();
+      return;
+    }
+
+    if (c.y < DH + CH) newCars.push(c);
+  }
+  cars = newCars;
+
+  // Phase → Overdrive
+  if (phase >= OVERDRIVE_FILL && !overdrive) {
+    triggerOverdrive();
+  }
+
+  // Particles
+  particles = particles.filter(p => {
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    p.vy += 0.8 * dt * 60 * 0.05;
+    p.life -= dt;
+    return p.life > 0;
+  });
+
+  // Score ramp
+  score += dt * multiplier * (overdrive ? 3 : 1);
+
+  // Ambient overdrive particles
+  if (overdrive && Math.random() < 0.3) {
+    spawnParticles(Math.random() * DW, Math.random() * DH * 0.5, 1, hue + Math.random() * 60, 60, 0.4, 3);
+  }
+
+  // Shake decay
+  shakeAmt *= Math.pow(shakeDecay, dt * 60);
+  if (shakeAmt < 0.1) shakeAmt = 0;
+
+  // Flash decay
+  flashAlpha = Math.max(0, flashAlpha - dt * 4);
+
+  updateHUD();
+}
+
+function spawnWave() {
+  // pick pattern difficulty based on time
+  let maxPat = 3; // easy start
+  if (timePlayed > 10) maxPat = 8;
+  if (timePlayed > 20) maxPat = 12;
+  if (timePlayed > 35) maxPat = PATTERNS.length;
+
+  const pat = PATTERNS[Math.floor(Math.random() * maxPat)];
+  const baseY = -CH - 10;
+  const carHue = (hue + Math.random() * 40 - 20 + 360) % 360;
+  for (const { lane, off } of pat) {
+    cars.push(makeCar(lane, baseY - off, carHue));
+  }
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+function renderFrame(dt) {
+  ctx.save();
+
+  // Shake
+  let sx = 0, sy = 0;
+  if (shakeAmt > 0.1) {
+    sx = (Math.random() - 0.5) * shakeAmt * 2;
+    sy = (Math.random() - 0.5) * shakeAmt * 2;
+  }
+
+  // Clear
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Scale to design units
+  ctx.setTransform(scaleX, 0, 0, scaleY, sx * scaleX, sy * scaleY);
+
+  if (state === STATE.START) {
+    drawStart();
+  } else if (state === STATE.PLAYING) {
+    drawGame();
+  } else if (state === STATE.GAMEOVER) {
+    drawGame();
+    drawGameOver();
+  }
+
+  // Flash overlay
+  if (flashAlpha > 0) {
+    ctx.fillStyle = overdrive
+      ? `hsla(${hue+60},100%,80%,${flashAlpha})`
+      : `rgba(255,255,255,${flashAlpha})`;
+    ctx.fillRect(0, 0, DW, DH);
+  }
+
+  ctx.restore();
+}
+
+function drawRoad() {
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, DH);
+  if (overdrive) {
+    bg.addColorStop(0, `hsl(${(hue+180)%360},60%,8%)`);
+    bg.addColorStop(1, `hsl(${hue},60%,5%)`);
+  } else {
+    bg.addColorStop(0, '#0a0014');
+    bg.addColorStop(1, '#06000c');
+  }
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, DW, DH);
+
+  // Road surface
+  const rd = ctx.createLinearGradient(ROAD_X, 0, ROAD_X + ROAD_W, 0);
+  rd.addColorStop(0, '#0e0018');
+  rd.addColorStop(0.5, '#12001e');
+  rd.addColorStop(1, '#0e0018');
+  ctx.fillStyle = rd;
+  ctx.fillRect(ROAD_X, 0, ROAD_W, DH);
+
+  // Roadside glow
+  ctx.fillStyle = `hsla(${hue},80%,40%,0.07)`;
+  ctx.fillRect(ROAD_X - 2, 0, 4, DH);
+  ctx.fillRect(ROAD_X + ROAD_W - 2, 0, 4, DH);
+
+  // Lane dividers (dashed)
+  const t = performance.now() / 1000;
+  const dashLen = 40, gap = 30, total = dashLen + gap;
+  const offset = (t * getSpeed(timePlayed) * 0.4) % total;
+
+  ctx.strokeStyle = `hsla(${hue},60%,60%,0.18)`;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([dashLen, gap]);
+  ctx.lineDashOffset = -offset;
+
+  const dividers = [160, 260]; // between lane 0-1, 1-2
+  for (const dx of dividers) {
+    ctx.beginPath();
+    ctx.moveTo(dx, 0);
+    ctx.lineTo(dx, DH);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function drawPlayer() {
+  const x = playerX, y = PLAYER_Y;
+  const w = PW, h = PH;
+  const ph = laneColorHue;
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Body glow
+  ctx.shadowColor = `hsl(${ph},100%,65%)`;
+  ctx.shadowBlur = overdrive ? 20 : 12;
+
+  // Car body
+  ctx.fillStyle = `hsl(${ph},80%,55%)`;
+  ctx.beginPath();
+  ctx.roundRect(-w*0.5, -h*0.5, w, h, 6);
+  ctx.fill();
+
+  // Windshield
+  ctx.fillStyle = `hsla(${ph},60%,85%,0.7)`;
+  ctx.fillRect(-w*0.3, -h*0.5+8, w*0.6, h*0.25);
+
+  // Headlights
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 8;
+  ctx.fillRect(-w*0.35, h*0.5-12, 10, 6);
+  ctx.fillRect(w*0.35-10, h*0.5-12, 10, 6);
+
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawCar(c) {
+  const x = c.x, y = c.y;
+  const w = CW, h = CH;
+  const ch = c.hue;
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  ctx.shadowColor = `hsl(${ch},100%,60%)`;
+  ctx.shadowBlur = 10;
+
+  // Body
+  ctx.fillStyle = `hsl(${ch},75%,45%)`;
+  ctx.beginPath();
+  ctx.roundRect(-w*0.5, -h*0.5, w, h, 8);
+  ctx.fill();
+
+  // Roof accent
+  ctx.fillStyle = `hsl(${ch},60%,30%)`;
+  ctx.fillRect(-w*0.3, -h*0.5+14, w*0.6, h*0.3);
+
+  // Rear lights
+  ctx.fillStyle = `hsl(${(ch+15)%360},100%,65%)`;
+  ctx.shadowColor = `hsl(${(ch+15)%360},100%,65%)`;
+  ctx.shadowBlur = 8;
+  ctx.fillRect(-w*0.35, -h*0.5+6, 12, 7);
+  ctx.fillRect(w*0.35-12, -h*0.5+6, 12, 7);
+
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const a = p.life / p.maxLife;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = `hsl(${p.hue},100%,65%)`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * a, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawGame() {
+  drawRoad();
+  drawParticles();
+  for (const c of cars) drawCar(c);
+  drawPlayer();
+}
+
+function drawStart() {
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, DH);
+  bg.addColorStop(0, '#0a0014');
+  bg.addColorStop(1, '#06000c');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, DW, DH);
+
+  // Animated road preview
+  drawRoad();
+
+  // Overlay
+  ctx.fillStyle = 'rgba(10,0,20,0.6)';
+  ctx.fillRect(0, 0, DW, DH);
+
+  // Title
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  ctx.shadowColor = `hsl(${hue},100%,70%)`;
+  ctx.shadowBlur = 30;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 52px system-ui, sans-serif';
+  ctx.fillText('GLOW', DW * 0.5, DH * 0.35 - 30);
+
+  ctx.fillStyle = `hsl(${hue},100%,72%)`;
+  ctx.font = 'bold 36px system-ui, sans-serif';
+  ctx.fillText('SPRINT', DW * 0.5, DH * 0.35 + 20);
+  ctx.shadowBlur = 0;
+
+  // Subtitle
+  ctx.fillStyle = 'rgba(200,160,255,0.7)';
+  ctx.font = '14px system-ui, sans-serif';
+  ctx.fillText('PHASE LANE', DW * 0.5, DH * 0.35 + 55);
+
+  // Challenge banner
+  if (challengeScore > 0) {
+    ctx.fillStyle = `hsla(${hue},80%,70%,0.9)`;
+    ctx.font = 'bold 14px system-ui, sans-serif';
+    ctx.fillText(`Beat ${challengeScore} (×${challengeMult})`, DW * 0.5, DH * 0.35 + 88);
+  }
+
+  // Tap to start
+  const pulse = 0.7 + 0.3 * Math.sin(performance.now() / 400);
+  ctx.globalAlpha = pulse;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 18px system-ui, sans-serif';
+  ctx.fillText('TAP TO START', DW * 0.5, DH * 0.65);
+  ctx.globalAlpha = 1;
+
+  // Instructions
+  ctx.fillStyle = 'rgba(180,140,220,0.6)';
+  ctx.font = '13px system-ui, sans-serif';
+  ctx.fillText('Tap to switch lanes → dodge traffic', DW * 0.5, DH * 0.72);
+
+  // Best
+  if (best > 0) {
+    ctx.fillStyle = `hsla(${hue},70%,65%,0.8)`;
+    ctx.font = '15px system-ui, sans-serif';
+    ctx.fillText('BEST  ' + best, DW * 0.5, DH * 0.79);
+  }
+}
+
+function drawGameOver() {
+  // Darken
+  ctx.fillStyle = 'rgba(5,0,12,0.72)';
+  ctx.fillRect(0, 0, DW, DH);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // GAME OVER
+  ctx.shadowColor = '#ff2060';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ff2060';
+  ctx.font = 'bold 44px system-ui, sans-serif';
+  ctx.fillText('GAME OVER', DW * 0.5, DH * 0.32);
+  ctx.shadowBlur = 0;
+
+  // Score
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 64px system-ui, sans-serif';
+  ctx.fillText(Math.floor(score), DW * 0.5, DH * 0.44);
+
+  // Best
+  ctx.fillStyle = `hsl(${hue},70%,65%)`;
+  ctx.font = '16px system-ui, sans-serif';
+  const newBest = Math.floor(score) >= best;
+  ctx.fillText(newBest ? '✦ NEW BEST ✦' : 'BEST  ' + best, DW * 0.5, DH * 0.52);
+
+  // Best mult
+  ctx.fillStyle = 'rgba(200,160,255,0.7)';
+  ctx.font = '14px system-ui, sans-serif';
+  ctx.fillText('Peak ×' + bestMult, DW * 0.5, DH * 0.57);
+
+  // Tap to retry
+  const pulse = 0.7 + 0.3 * Math.sin(performance.now() / 400);
+  ctx.globalAlpha = pulse;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 18px system-ui, sans-serif';
+  ctx.fillText('TAP TO RETRY', DW * 0.5, DH * 0.67);
+  ctx.globalAlpha = 1;
+
+  // Share button (drawn as text hint; actual share via DOM)
+  ctx.fillStyle = `hsla(${hue},70%,65%,0.6)`;
+  ctx.font = '13px system-ui, sans-serif';
+  ctx.fillText('↑ Share score', DW * 0.5, DH * 0.73);
+}
+
+// ── Share button (real DOM, overlay) ─────────────────────────────────────────
+let shareBtn = null;
+function ensureShareBtn() {
+  if (shareBtn) return;
+  shareBtn = document.createElement('button');
+  shareBtn.id = 'share-btn';
+  shareBtn.textContent = 'Share Score';
+  shareBtn.style.cssText = `
+    position:absolute;
+    bottom:18%;left:50%;transform:translateX(-50%);
+    background:rgba(140,60,255,0.25);
+    border:1.5px solid rgba(180,100,255,0.5);
+    color:#d0a0ff;
+    font:bold 14px system-ui,sans-serif;
+    padding:8px 24px;
+    border-radius:40px;
+    cursor:pointer;
+    z-index:20;
+    letter-spacing:1px;
+    backdrop-filter:blur(4px);
+  `;
+  shareBtn.addEventListener('click', (e) => { e.stopPropagation(); doShare(); });
+  document.getElementById('game-wrap').appendChild(shareBtn);
+}
+function showShareBtn(show) {
+  if (show) {
+    ensureShareBtn();
+    shareBtn.style.display = 'block';
+  } else if (shareBtn) {
+    shareBtn.style.display = 'none';
+  }
+}
+
+function doShare() {
+  const s = Math.floor(score);
+  const url = new URL(location.href);
+  url.searchParams.set('challengeScore', s);
+  url.searchParams.set('challengeMult', bestMult);
+  const text = `I scored ${s} (peak ×${bestMult}) in Glow Sprint! Can you beat it?`;
+  if (navigator.share) {
+    navigator.share({ title: 'Glow Sprint', text, url: url.toString() }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      shareBtn.textContent = 'Link Copied!';
+      setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 2000);
+    }).catch(() => {});
+  }
+}
+
+// Watch state changes for share btn
+let prevState = -1;
+function checkShareBtnVisibility() {
+  if (state !== prevState) {
+    prevState = state;
+    showShareBtn(state === STATE.GAMEOVER);
+  }
+}
+
+// ── Canvas roundRect polyfill ─────────────────────────────────────────────────
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.lineTo(x + w, y + h - r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.lineTo(x + r, y + h);
+    this.arcTo(x, y + h, x, y, r);
+    this.lineTo(x, y + r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+  };
+}
+
+// ── Patch checkShareBtnVisibility into loop ───────────────────────────────────
+const _origLoop = loop;
+function patchedLoop(now) {
+  checkShareBtnVisibility();
+  // already inside RAF
+}
+// Hook via rAF wrapper instead
+function mainLoop(now) {
+  checkShareBtnVisibility();
+  const rawDt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  if (now < hitStopUntil) {
+    renderFrame(0);
+    requestAnimationFrame(mainLoop);
+    return;
+  }
+
+  if (state === STATE.PLAYING) update(rawDt, now);
+  renderFrame(rawDt);
+  requestAnimationFrame(mainLoop);
+}
+
+requestAnimationFrame(mainLoop);
+
+})();
+</script>
+</body>
+</html>
